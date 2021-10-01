@@ -69,6 +69,7 @@ exports.register = async (req, res) => {
 // Login
 exports.login = async (req, res) => {
   try {
+    // Get data from body
     const dataLogin = req.body;
 
     // Validate data from input json
