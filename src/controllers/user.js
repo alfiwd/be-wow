@@ -1,6 +1,7 @@
 // Import model
 const { users } = require("../../models");
 
+// Users
 exports.users = async (req, res) => {
   try {
     // Select all data users from database
@@ -26,6 +27,7 @@ exports.users = async (req, res) => {
   }
 };
 
+// Delete user
 exports.deleteUser = async (req, res) => {
   try {
     // Get id from parameter
@@ -48,7 +50,7 @@ exports.deleteUser = async (req, res) => {
   } catch (error) {
     console.log(error);
     res.send({
-      status: "error",
+      status: "failed",
       message: "Server Error",
     });
   }

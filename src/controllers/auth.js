@@ -38,11 +38,10 @@ exports.register = async (req, res) => {
     });
 
     // Create token
-    const SECRET_KEY = "Rahasiaku";
     const dataToken = {
       email: req.body.email,
     };
-    const token = jwt.sign(dataToken, SECRET_KEY);
+    const token = jwt.sign(dataToken, process.env.SECRET_KEY);
 
     // Create variable channel to show data
     const channel = {
@@ -114,8 +113,7 @@ exports.login = async (req, res) => {
     }
 
     // Create token
-    const SECRET_KEY = "Rahasiaku";
-    const token = jwt.sign(dataToken, SECRET_KEY);
+    const token = jwt.sign(dataToken, process.env.SECRET_KEY);
 
     // Create variable channel to show data
     const channel = {

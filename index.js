@@ -1,4 +1,6 @@
+// Import package
 const express = require("express");
+require("dotenv").config();
 
 // Get routes to the variable
 const router = require("./src/routes/index");
