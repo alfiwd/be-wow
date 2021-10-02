@@ -74,6 +74,7 @@ exports.addBook = async (req, res) => {
       author: Joi.string().required(),
       isbn: Joi.number().required(),
       about: Joi.string().required(),
+      book_file: Joi.required(),
     });
     const { error } = schema.validate(req.body);
     if (error) {
@@ -130,20 +131,28 @@ exports.editBook = async (req, res) => {
     const dataBody = req.body;
 
     // Update data from databse checking by id
-    const book = await books.findOne({
-      where: {
-        id,
-      },
-    });
-    fs.unlinkSync("uploads/" + book.book_file);
-    await books.update(
-      { ...dataBody, book_file: req.file.filename },
-      {
+    if (!req.file) {
+      await books.update(dataBody, {
         where: {
           id,
         },
-      }
-    );
+      });
+    } else {
+      const book = await books.findOne({
+        where: {
+          id,
+        },
+      });
+      fs.unlinkSync("uploads/" + book.book_file);
+      await books.update(
+        { ...dataBody, book_file: req.file.filename },
+        {
+          where: {
+            id,
+          },
+        }
+      );
+    }
 
     // Select data from database by id
     const data = await books.findOne({

@@ -8,11 +8,11 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      file_transfer: {
+      transfer_proof: {
         type: Sequelize.STRING,
       },
       remaining_active: {
-        type: Sequelize.STRING,
+        type: Sequelize.INTEGER,
       },
       user_status: {
         type: Sequelize.STRING,
