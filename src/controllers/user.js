@@ -11,6 +11,14 @@ exports.users = async (req, res) => {
       },
     });
 
+    // If data null
+    if (data.length === 0) {
+      res.send({
+        status: "failed",
+        message: "Data not found!",
+      });
+    }
+
     // Send response to client
     res.send({
       status: "success",
@@ -32,6 +40,19 @@ exports.deleteUser = async (req, res) => {
   try {
     // Get id from parameter
     const { id } = req.params;
+
+    // Checking id user
+    const checkId = await users.findOne({
+      where: {
+        id,
+      },
+    });
+    if (checkId === null) {
+      return res.send({
+        status: "failed",
+        message: `User id ${id} not found!`,
+      });
+    }
 
     // Delete data from databse
     const data = await users.destroy({

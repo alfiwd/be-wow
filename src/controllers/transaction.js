@@ -14,9 +14,30 @@ exports.addTransaction = async (req, res) => {
     });
     const { error } = schema.validate(req.body);
     if (error) {
+      fs.unlinkSync("uploads/" + req.file.filename);
       return res.status(400).send({
         status: "error",
         message: error.details[0].message,
+      });
+    }
+    if (!req.file) {
+      res.send({
+        status: "failed",
+        message: "Please insert file to upload!",
+      });
+    }
+
+    // Checking id user
+    const checkId = await users.findOne({
+      where: {
+        id: req.body.user_id,
+      },
+    });
+    if (checkId === null) {
+      fs.unlinkSync("uploads/" + req.file.filename);
+      return res.send({
+        status: "failed",
+        message: `User id ${req.body.user_id} not found!`,
       });
     }
 
@@ -30,7 +51,7 @@ exports.addTransaction = async (req, res) => {
     });
 
     // Select data from database
-    const data = await transaction.findOne({
+    let data = await transaction.findOne({
       where: {
         id: addTransaction.id,
       },
@@ -47,6 +68,12 @@ exports.addTransaction = async (req, res) => {
         exclude: ["user_id", "createdAt", "updatedAt"],
       },
     });
+
+    // Add path to transfer proof
+    data = {
+      ...data.dataValues,
+      transfer_proof: process.env.FILE_PATH + data.transfer_proof,
+    };
 
     // Send response to client
     res.send({
@@ -73,6 +100,19 @@ exports.editTransaction = async (req, res) => {
     // Get data from body
     const dataBody = req.body;
 
+    // Check id
+    const checkId = await transaction.findOne({
+      where: {
+        id,
+      },
+    });
+    if (checkId === null) {
+      return res.send({
+        status: "failed",
+        message: "Data not found!",
+      });
+    }
+
     // Update data from database checking by id
     if (!req.file) {
       await transaction.update(dataBody, {
@@ -98,7 +138,7 @@ exports.editTransaction = async (req, res) => {
     }
 
     // Select data from database
-    const data = await transaction.findOne({
+    let data = await transaction.findOne({
       where: {
         id,
       },
@@ -115,6 +155,12 @@ exports.editTransaction = async (req, res) => {
         exclude: ["user_id", "createdAt", "updatedAt"],
       },
     });
+
+    // Add path file to transfer proof
+    data = {
+      ...data.dataValues,
+      transfer_proof: process.env.FILE_PATH + data.transfer_proof,
+    };
 
     // Send response to client
     res.send({
@@ -139,7 +185,7 @@ exports.transaction = async (req, res) => {
     const { id } = req.params;
 
     // Get data from database checking by id
-    const data = await transaction.findOne({
+    let data = await transaction.findOne({
       where: {
         id,
       },
@@ -156,6 +202,20 @@ exports.transaction = async (req, res) => {
         exclude: ["user_id", "createdAt", "updatedAt"],
       },
     });
+
+    // Checking if data null
+    if (data === null) {
+      return res.send({
+        status: "failed",
+        message: "Data not found!",
+      });
+    }
+
+    // Add path file to transfer proof
+    data = {
+      ...data.dataValues,
+      transfer_proof: process.env.FILE_PATH + data.transfer_proof,
+    };
 
     // Send response to client
     res.send({
@@ -177,7 +237,7 @@ exports.transaction = async (req, res) => {
 exports.transactions = async (req, res) => {
   try {
     // Get all data from database
-    const data = await transaction.findAll({
+    let data = await transaction.findAll({
       include: [
         {
           model: users,
@@ -190,6 +250,22 @@ exports.transactions = async (req, res) => {
       attributes: {
         exclude: ["user_id", "createdAt", "updatedAt"],
       },
+    });
+
+    // If data null
+    if (data.length === 0) {
+      res.send({
+        status: "failed",
+        message: "Data not found!",
+      });
+    }
+
+    // Add path file to transfer proof
+    data = data.map((item) => {
+      return {
+        ...item.dataValues,
+        transfer_proof: process.env.FILE_PATH + item.dataValues.transfer_proof,
+      };
     });
 
     // Send response to client

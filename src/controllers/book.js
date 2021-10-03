@@ -9,10 +9,27 @@ const fs = require("fs");
 exports.books = async (req, res) => {
   try {
     // Select all data users from database
-    const data = await books.findAll({
+    let data = await books.findAll({
       attributes: {
         exclude: ["createdAt", "updatedAt"],
       },
+    });
+
+    // Checking if data null
+    if (data.length === 0) {
+      return res.send({
+        status: "failed",
+        message: "Data not found!",
+      });
+    }
+
+    // Parse to json and map data item
+    data = JSON.parse(JSON.stringify(data));
+    data = data.map((item) => {
+      return {
+        ...item,
+        book_file: process.env.FILE_PATH + item.book_file,
+      };
     });
 
     // Send response to client
@@ -38,7 +55,7 @@ exports.book = async (req, res) => {
     const { id } = req.params;
 
     // Select data from database by id
-    const data = await books.findOne({
+    let data = await books.findOne({
       where: {
         id,
       },
@@ -46,6 +63,20 @@ exports.book = async (req, res) => {
         exclude: ["createdAt", "updatedAt"],
       },
     });
+
+    // Checking if data null
+    if (data === null) {
+      return res.send({
+        status: "failed",
+        message: "Data not found!",
+      });
+    }
+
+    // Add path to book file
+    data = {
+      ...data.dataValues,
+      book_file: process.env.FILE_PATH + data.book_file,
+    };
 
     // Send response to client
     res.send({
@@ -74,13 +105,25 @@ exports.addBook = async (req, res) => {
       author: Joi.string().required(),
       isbn: Joi.number().required(),
       about: Joi.string().required(),
-      book_file: Joi.required(),
     });
     const { error } = schema.validate(req.body);
+    if (error && !req.file) {
+      return res.send({
+        status: "failed",
+        message: "Please insert all data!",
+      });
+    }
     if (error) {
+      fs.unlinkSync("uploads/" + req.file.filename);
       return res.status(400).send({
         status: "error",
         message: error.details[0].message,
+      });
+    }
+    if (!req.file) {
+      return res.send({
+        status: "failed",
+        message: "Please insert file to upload!",
       });
     }
 
@@ -96,7 +139,7 @@ exports.addBook = async (req, res) => {
     });
 
     // Select data from database by id
-    const data = await books.findOne({
+    let data = await books.findOne({
       where: {
         id: addBook.id,
       },
@@ -104,6 +147,13 @@ exports.addBook = async (req, res) => {
         exclude: ["createdAt", "updatedAt"],
       },
     });
+
+    // Parse to json and add path to book file
+    data = JSON.parse(JSON.stringify(data));
+    data = {
+      ...data,
+      book_file: process.env.FILE_PATH + data.book_file,
+    };
 
     // Send response to client
     res.send({
@@ -131,12 +181,26 @@ exports.editBook = async (req, res) => {
     const dataBody = req.body;
 
     // Update data from databse checking by id
-    if (!req.file) {
-      await books.update(dataBody, {
-        where: {
-          id,
-        },
+    const checkId = await books.findOne({
+      where: {
+        id,
+      },
+    });
+    if (checkId === null) {
+      res.send({
+        status: "failed",
+        message: `Book id ${id} not found!`,
       });
+    }
+    if (!req.file) {
+      await books.update(
+        { ...dataBody },
+        {
+          where: {
+            id,
+          },
+        }
+      );
     } else {
       const book = await books.findOne({
         where: {
@@ -155,7 +219,7 @@ exports.editBook = async (req, res) => {
     }
 
     // Select data from database by id
-    const data = await books.findOne({
+    let data = await books.findOne({
       where: {
         id,
       },
@@ -163,6 +227,13 @@ exports.editBook = async (req, res) => {
         exclude: ["createdAt", "updatedAt"],
       },
     });
+
+    // Parse to json and add path to book file
+    data = JSON.parse(JSON.stringify(data));
+    data = {
+      ...data,
+      book_file: process.env.FILE_PATH + data.book_file,
+    };
 
     // Send response to client
     res.send({
@@ -192,9 +263,17 @@ exports.deleteBook = async (req, res) => {
         id,
       },
     });
-    fs.unlinkSync("uploads/" + book.book_file);
+
+    // Checking if book null
+    if (book === null) {
+      return res.send({
+        status: "failed",
+        message: "Data not found!",
+      });
+    }
 
     // Delete data from database
+    fs.unlinkSync("uploads/" + book.book_file);
     await books.destroy({
       where: {
         id,

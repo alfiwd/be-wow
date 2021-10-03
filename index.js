@@ -13,5 +13,6 @@ app.use(express.json());
 
 // Create endpoint grouping and router
 app.use("/api/v1/", router);
+app.use("/uploads", express.static("uploads"));
 
 app.listen(port, () => console.log(`Listening on port ${port}`));
